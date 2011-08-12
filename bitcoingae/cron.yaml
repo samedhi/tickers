@@ -1,0 +1,8 @@
+cron:
+- description: retrieve recent quote
+  url: /tasks/retrieve
+  schedule: every 1 minutes
+
+- description: delete old Channel objects
+  url: /tasks/disconnect
+  schedule: every 1 minutes

@@ -1,0 +1,38 @@
+<style>
+body {
+  overflow-x:hidden;
+	font: 24px Ariel;
+}
+
+.exchange {
+	width: 220px;
+}
+
+.exchange:hover{background-color:#7FBBF3;}
+
+.price {
+	float: right;
+}
+</style>
+
+<script>
+function mtgox(){ return document.getElementById("mtgox"); };
+function trade(){ return document.getElementById("trade"); };
+
+function init(){
+	mtgox().innerHTML = chrome.extension.getBackgroundPage().global.mtgox;
+	trade().innerHTML = chrome.extension.getBackgroundPage().global.trade;
+};
+</script>
+
+  <body onload="init()">
+		<div class="exchange" onclick="chrome.tabs.create({url:'https://www.mtgox.com/'})">
+			<span class="name">Mt. Gox</span>
+			<span id="mtgox" class="price"></span>
+		</div>
+		<div class="exchange" onclick="chrome.tabs.create({url:'https://www.tradehill.com/'})">
+			<span class="name">TradeHill</span>
+			<span id="trade" class="price"></span>
+		</div>
+		</ul>
+  </body>

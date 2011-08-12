@@ -1,0 +1,63 @@
+
+<script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script>
+
+<script>
+var global = {mtgox: "LOADING", trade: "LOADING"};
+
+function onMessage(message){
+	var data = JSON.parse(message.data);
+	
+	if(data == -1){ return; } //no op, server has not updated.
+	
+	//update the badge
+	var data4 = data.mtgox.toString().substr(0,4);
+	chrome.browserAction.setBadgeText({text: data4});
+	
+	//update the popup
+	if(data.mtgox != undefined){ global.mtgox = data.mtgox.toFixed(2); }
+	if(data.trade != undefined){ global.trade = data.trade.toFixed(2); }
+};
+
+function onClose(){
+	console.log("4) the connection was closed, starting a new one");
+	start();
+};
+
+function onError(msg){
+	console.log(msg.description + " (" + msg.code + ")");
+};
+
+function run(token){
+	console.log("2) the token passed in was => "+token);
+	if(token != undefined && token != null){
+		console.log("3) token was valid, we are starting up!");
+		var channel = new goog.appengine.Channel(token);
+		var socket = channel.open();
+		socket.onmessage = onMessage;
+		socket.onclose = onClose;
+		socket.onerror = onError;
+	}
+};
+
+function start(){
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET", "http://bitcoingae.appspot.com/getId", true);
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4) {
+			var text = xhr.responseText;
+			console.log("1) the response text is "+text);
+			var resp = JSON.parse(text);
+			run(resp.token);
+		}
+	};
+	xhr.send();
+};
+
+start();
+
+chrome.browserAction.onClicked.addListener(
+	function(){
+		chrome.tabs.create({url:"https://mtgox.com/"})
+	}
+);
+</script>
