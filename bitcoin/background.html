@@ -50,6 +50,9 @@ function start(){
 			run(resp.token);
 		}
 	};
+	xhr.onerror = function(){
+		start();
+	};
 	xhr.send();
 };
 
