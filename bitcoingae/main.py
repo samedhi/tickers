@@ -23,12 +23,14 @@ class Channel(db.Model):
 class RetrieveHandler(webapp.RequestHandler):
 		def get(self):
 			global globHighId
+			history = get_history()
 			result_gox = urlfetch.fetch('https://mtgox.com/code/data/ticker.php')
 			if result_gox.status_code == 200:
 				json = simplejson.loads(result_gox.content)
 				last = float(json['ticker']['last'])
 				globLast['MtGox'] = last
 				logging.info("from Mt Gox, received:"+str(last))
+				history.mtGox = history.mtGox[:1439] + [last] 
 			else:
 				logging.info("status code for Mt Gox was %s"%result_gox.status_code)
 				
@@ -38,9 +40,11 @@ class RetrieveHandler(webapp.RequestHandler):
 				last = float(json['ticker']['last'])
 				globLast['TradeHill'] = last
 				logging.info("from TradeHill, received:"+str(last))
+				history.tradeHill = history.tradeHill[:1439] + [last]
 			else:
 				logging.info("status code TradeHill was %s"%result_trd.status_code)
-				
+			
+			history.put()
 			taskqueue.add(url="/tasks/notify", params={'min': 0, 'max':globHighId, 'last': lastTick()})
 			
 class NotifyWorker(webapp.RequestHandler):
@@ -59,6 +63,18 @@ class NotifyWorker(webapp.RequestHandler):
 			elif len(query) == 1:
 				channel.send_message(str(query[0].id), last);
 
+class History(db.Model):
+	mtGox = db.ListProperty(float, required=True)
+	tradeHill = db.ListProperty(float, required=True)
+				
+def get_history():
+	key = db.Key.from_path("History", "HistoryKey")
+	history = db.get(key)
+	if history == None:
+		history = History(key=key, time=[], value=[])
+		history.put()
+	return history
+		
 class GetIdHandler(webapp.RequestHandler):
     def get(self):
 			while(True):
@@ -67,7 +83,8 @@ class GetIdHandler(webapp.RequestHandler):
 				if not Channel.all().filter("id = ", id).get():
 					break
 			token = channel.create_channel(str(id))
-			self.response.out.write('{ "id" : %s , "token" : "%s"}' % (id, token));
+			self.response.out.write('{ "id" : %s , "token" : "%s", "mtgoxHist" : %s , "tradeHist" : %s}' % 
+				(id, token, get_history().mtGox, get_history().tradeHill))
 
 class ConnectedHandler(webapp.RequestHandler):
 	def post(self):
@@ -90,7 +107,8 @@ class DisconnectedWorker(webapp.RequestHandler):
 			
 def main():
 	application = webapp.WSGIApplication(
-		[	('/getId', GetIdHandler),
+		[	
+		  ('/getId', GetIdHandler),
 			('/tasks/disconnect', DisconnectedWorker),
 			('/tasks/retrieve', RetrieveHandler),
 			('/tasks/notify', NotifyWorker),

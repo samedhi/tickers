@@ -1,3 +1,7 @@
+<!--[if IE]><script language="javascript" type="text/javascript" src="flotr/excanvas.js"></script><![endif]-->
+ <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/prototype.js"></script>
+<script language="javascript" type="text/javascript" src="flotr/flotr-0.2.0-alpha.js"></script>
+
 <style>
 body {
   overflow-x:hidden;
@@ -20,8 +24,44 @@ function mtgox(){ return document.getElementById("mtgox"); };
 function trade(){ return document.getElementById("trade"); };
 
 function init(){
-	mtgox().innerHTML = chrome.extension.getBackgroundPage().global.mtgox;
-	trade().innerHTML = chrome.extension.getBackgroundPage().global.trade;
+	var glbl = chrome.extension.getBackgroundPage().global;
+	console.log(glbl);
+	mtgox().innerHTML = glbl.mtgox;
+	trade().innerHTML = glbl.trade;
+	
+	var mtgoxHist = glbl.mtgoxHist;
+	var tradeHist = glbl.tradeHist;
+	var mtgoxHistDisp = [];
+	var tradeHistDisp = [];
+	
+	for(var i = 0; i < mtgoxHist.length; i++){mtgoxHistDisp[i] = [-1*(mtgoxHist.length - (i+1)) / 60, mtgoxHist[i]]; }
+	for(var i = 0; i < tradeHist.length; i++){tradeHistDisp[i] = [-1*(tradeHist.length - (i+1)) / 60, tradeHist[i]]; }
+	
+	var f = Flotr.draw(
+	$('container'), [
+		{
+			data: mtgoxHistDisp,
+	    label: "MtGox"
+		},
+		{
+	    data: tradeHistDisp,
+	    label: "TradeHill"
+		}],
+		{
+			xaxis: { 
+				tickDecimals: 2,
+				tickFormatter: function(x){return x * -1 + " hours";}
+			},
+			yaxis: {
+				tickDecimals: 2
+			},
+			selection: {
+				mode: 'x',		// => one of null, 'x', 'y' or 'xy'
+				color: '#B6D9FF',	// => selection box color
+				fps: 30			// => frames-per-second
+			},
+		}
+	);
 };
 </script>
 
@@ -34,5 +74,5 @@ function init(){
 			<span class="name">TradeHill</span>
 			<span id="trade" class="price"></span>
 		</div>
-		</ul>
+		<div id="container" style="width:600px;height:300px;"></div>
   </body>

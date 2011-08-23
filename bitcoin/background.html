@@ -2,7 +2,7 @@
 <script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script>
 
 <script>
-var global = {mtgox: "LOADING", trade: "LOADING"};
+var global = {mtgox: "LOADING", trade: "LOADING", mtgoxHist:[], tradeHist:[]};
 
 function onMessage(message){
 	var data = JSON.parse(message.data);
@@ -14,8 +14,18 @@ function onMessage(message){
 	chrome.browserAction.setBadgeText({text: data4});
 	
 	//update the popup
-	if(data.mtgox != undefined){ global.mtgox = data.mtgox.toFixed(2); }
-	if(data.trade != undefined){ global.trade = data.trade.toFixed(2); }
+	if(data.mtgox != undefined){ 
+		global.mtgox = data.mtgox.toFixed(2); 
+		var mtgox = global.mtgoxHist.slice(0, 168);
+		mtgox.push(data.mtgox);
+		global.mtgoxHist = mtgox;
+	}
+	if(data.trade != undefined){ 
+		global.trade = data.trade.toFixed(2);
+		var trade = global.tradeHist.slice(0, 168);
+		trade.push(data.trade);
+		global.tradeHist = trade;
+	}
 };
 
 function onClose(){
@@ -47,7 +57,10 @@ function start(){
 			var text = xhr.responseText;
 			console.log("1) the response text is "+text);
 			var resp = JSON.parse(text);
+			console.log(resp);
 			run(resp.token);
+			global.mtgoxHist = resp["mtgoxHist"];
+			global.tradeHist = resp["tradeHist"];
 		}
 	};
 	xhr.onerror = function(){
