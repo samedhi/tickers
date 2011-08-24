@@ -1,4 +1,3 @@
-
 <script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script>
 
 <script>
@@ -16,13 +15,13 @@ function onMessage(message){
 	//update the popup
 	if(data.mtgox != undefined){ 
 		global.mtgox = data.mtgox.toFixed(2); 
-		var mtgox = global.mtgoxHist.slice(0, 168);
+		var mtgox = global.mtgoxHist.slice(0, 1439);
 		mtgox.push(data.mtgox);
 		global.mtgoxHist = mtgox;
 	}
 	if(data.trade != undefined){ 
 		global.trade = data.trade.toFixed(2);
-		var trade = global.tradeHist.slice(0, 168);
+		var trade = global.tradeHist.slice(0, 1439);
 		trade.push(data.trade);
 		global.tradeHist = trade;
 	}
@@ -35,12 +34,25 @@ function onClose(){
 
 function onError(msg){
 	console.log(msg.description + " (" + msg.code + ")");
+	//start();
 };
 
 function run(token){
 	console.log("2) the token passed in was => "+token);
 	if(token != undefined && token != null){
 		console.log("3) token was valid, we are starting up!");
+		if(typeof(goog) === "undefined"){
+			console.log("It appears this was not imported, importing now");
+			var fileref=document.createElement('script');
+			fileref.setAttribute("type","text/javascript");
+			fileref.setAttribute("src", "http://bitcoingae.appspot.com/_ah/channel/jsapi");
+			if (typeof fileref != "undefined"){
+				document.getElementsByTagName("head")[0].appendChild(fileref)
+			}
+			
+			setTimeout("start()", 1000);
+			return;
+		}
 		var channel = new goog.appengine.Channel(token);
 		var socket = channel.open();
 		socket.onmessage = onMessage;
@@ -64,7 +76,7 @@ function start(){
 		}
 	};
 	xhr.onerror = function(){
-		start();
+		setTimeout("start()", 1000);
 	};
 	xhr.send();
 };

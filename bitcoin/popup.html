@@ -34,8 +34,8 @@ function init(){
 	var mtgoxHistDisp = [];
 	var tradeHistDisp = [];
 	
-	for(var i = 0; i < mtgoxHist.length; i++){mtgoxHistDisp[i] = [-1*(mtgoxHist.length - (i+1)) / 60, mtgoxHist[i]]; }
-	for(var i = 0; i < tradeHist.length; i++){tradeHistDisp[i] = [-1*(tradeHist.length - (i+1)) / 60, tradeHist[i]]; }
+	for(var i = 0; i < mtgoxHist.length; i++){mtgoxHistDisp[i] = [-1*(mtgoxHist.length - (i+1)), mtgoxHist[i]]; }
+	for(var i = 0; i < tradeHist.length; i++){tradeHistDisp[i] = [-1*(tradeHist.length - (i+1)), tradeHist[i]]; }
 	
 	var f = Flotr.draw(
 	$('container'), [
@@ -49,8 +49,13 @@ function init(){
 		}],
 		{
 			xaxis: { 
-				tickDecimals: 2,
-				tickFormatter: function(x){return x * -1 + " hours";}
+				tickDecimals: 0,
+				tickFormatter: function(x){
+					var val = x * -1;
+					var hours = Math.floor(val / 60);
+					var minutes = val % 60;
+					return  hours + ":" + minutes;
+				}
 			},
 			yaxis: {
 				tickDecimals: 2
