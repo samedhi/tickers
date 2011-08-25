@@ -30,7 +30,7 @@ class RetrieveHandler(webapp.RequestHandler):
 				last = float(json['ticker']['last'])
 				globLast['MtGox'] = last
 				logging.info("from Mt Gox, received:"+str(last))
-				history.mtGox = history.mtGox[:1439] + [last] 
+				history.mtGox = history.mtGox[1:1440] + [last] 
 			else:
 				logging.info("status code for Mt Gox was %s"%result_gox.status_code)
 				
@@ -40,7 +40,7 @@ class RetrieveHandler(webapp.RequestHandler):
 				last = float(json['ticker']['last'])
 				globLast['TradeHill'] = last
 				logging.info("from TradeHill, received:"+str(last))
-				history.tradeHill = history.tradeHill[:1439] + [last]
+				history.tradeHill = history.tradeHill[1:1440] + [last]
 			else:
 				logging.info("status code TradeHill was %s"%result_trd.status_code)
 			
