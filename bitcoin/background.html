@@ -1,4 +1,4 @@
-<!-- <script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script> -->
+<script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script> 
 
 <script>
 var global = {mtgox: "LOADING", trade: "LOADING", mtgoxHist:[], tradeHist:[]};
@@ -16,8 +16,9 @@ function loadChannel(){
 		if (typeof globalChannel != "undefined"){
 			document.getElementsByTagName("head")[0].appendChild(globalChannel)
 		}
-		setTimeout("loadChannel()", 10000);
+		setTimeout("loadChannel()", 2000);
 	}else{
+		console.log("The channel api appears to be imported now, calling start()");
 		start();
 	}
 };
@@ -28,7 +29,7 @@ function start(){
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			var text = xhr.responseText;
-			console.log("the response text is => "+text);
+			console.log("the response text is => ");
 			var resp = JSON.parse(text);
 			console.log(resp);
 			run(resp.token);
@@ -42,6 +43,7 @@ function start(){
 	};
 	xhr.send();
 };
+var channel;
 
 function run(token){
 	console.log("the token passed to run() was => "+token);
@@ -54,11 +56,14 @@ function run(token){
 		
 		socket.onclose = function(){
 			console.log("the connection was closed, starting a new one");
+			socket.close();
 			start();
+			//run(token);
 		};
 
 		socket.onerror = function(msg){
 			console.log(msg.description + " (" + msg.code + ")");
+			socket.close();
 			start();
 		};
 	}
@@ -86,6 +91,7 @@ function onMessage(message){
 		trade.push(data.trade);
 		global.tradeHist = trade;
 	}
+	timer = new Date();
 };
 
 loadChannel();
@@ -95,4 +101,15 @@ loadChannel();
 //		chrome.tabs.create({url:"https://mtgox.com/"})
 //	}
 //);
+
+
+var timer = undefined;
+setTimeout("heartbeat()", 10 * 1000);
+function heartbeat(){
+	if( (new Date()).getTime() - timer.getTime() > 60 * 1000){
+		console.log("heartbeat detected no activity, calling start()");
+		start();
+	}
+	setTimeout("heartbeat()", 120 * 1000);
+}
 </script>
