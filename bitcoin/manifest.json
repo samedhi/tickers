@@ -1,6 +1,6 @@
 {
-  "name": "Bitcoin value on Mt. Gox",
-  "version": "1.3",
+  "name": "Bitcoin Watch",
+  "version": "1.7",
   "description": "The current value of bitcoins in US dollars.",
   "permissions": [
 		"http://bitcoingae.appspot.com/getId"

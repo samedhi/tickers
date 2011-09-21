@@ -1,100 +1,109 @@
-<script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script> 
-
+<!-- <script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script>  -->
+<script type="text/javascript" src="http://bitcoingae.appspot.com/channel.js"></script> 
 <script>
 var global = {mtgox: "LOADING", trade: "LOADING", mtgoxHist:[], tradeHist:[]};
 var globalChannel = null;
 
-function loadChannel(){
+function loadChannelFirst(){
 	if(typeof(goog) === "undefined"){
+		console.log("goog not found, trying to get resources");
 		if(globalChannel != null){
 			document.getElementsByTagName("head")[0].removeChild(globalChannel);
 		}
-		console.log("It appears that the channel api was not imported, importing now");
 		globalChannel = document.createElement('script');
 		globalChannel.setAttribute("type","text/javascript");
 		globalChannel.setAttribute("src", "http://bitcoingae.appspot.com/_ah/channel/jsapi");
 		if (typeof globalChannel != "undefined"){
 			document.getElementsByTagName("head")[0].appendChild(globalChannel)
 		}
-		setTimeout("loadChannel()", 2000);
+		setTimeout("loadChannelFirst()", 1000*5);
 	}else{
-		console.log("The channel api appears to be imported now, calling start()");
+		console.log("goog found, starting up");
 		start();
 	}
 };
 
 function start(){
+	console.log("start() being called");
 	var xhr = new XMLHttpRequest();
 	xhr.open("GET", "http://bitcoingae.appspot.com/getId", true);
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			var text = xhr.responseText;
-			console.log("the response text is => ");
-			var resp = JSON.parse(text);
-			console.log(resp);
-			run(resp.token);
-			global.mtgoxHist = resp["mtgoxHist"];
-			global.tradeHist = resp["tradeHist"];
+			console.log("xhr in start() response text is => "+text+"("+new Date()+")");
+			if(xhr.status == 200){	
+				var resp = JSON.parse(text);
+				console.log(resp);
+				run(resp.token);
+				global.mtgoxHist = resp["mtgoxHist"];
+				global.tradeHist = resp["tradeHist"];
+//		}else{
+//				console.log("xhr in start() non 200 response text is => "+text+"("+new Date()+")");
+//				setTimeout("cleanup()", 1000)
+			}
 		}
 	};
-	xhr.onerror = function(){
-		console.log(msg.description + " (" + msg.code + ")");
+	xhr.onerror = function(msg){
+		console.log("xhr in start() error " + msg.description + " (" + msg.code + ")");
 		setTimeout("start()", 1000);
 	};
 	xhr.send();
+	
+	setTimeout("cleanup()", 110 * 60 * 1000);
 };
-var channel;
+
+var socket = null;
 
 function run(token){
-	console.log("the token passed to run() was => "+token);
-	if(token != undefined && token != null){
-		console.log("the token was valid, we are starting up and listening for notfications!");
+	console.log("run()'s token was => "+token);
 		var channel = new goog.appengine.Channel(token);
-		var socket = channel.open();
+		socket = channel.open();
 		
 		socket.onmessage = onMessage;
 		
 		socket.onclose = function(){
-			console.log("the connection was closed, starting a new one");
-			socket.close();
-			start();
-			//run(token);
+			console.log("the connection was closed");
 		};
 
 		socket.onerror = function(msg){
-			console.log(msg.description + " (" + msg.code + ")");
-			socket.close();
-			start();
+			console.log("socket error in run() " + msg.description + " (" + msg.code + ")");
+			cleanup();
 		};
-	}
 };
+
+function cleanup(){
+	console.log("cleaning up resources");
+	if(socket != null){
+		socket.close();
+		socket = null;
+	}
+	for(var i = 0; i < document.body.childNodes.length; i++){
+		body.removeChild(body.childNodes[i]);
+	}
+	setTimeout("start()", 1000);
+}
 
 function onMessage(message){
 	var data = JSON.parse(message.data);
+	console.log("onMessage called with message => " + message.data + " ("+new Date()+")");
 	
-	if(data == -1){ return; } //no op, server has not updated.
-	
-	//update the badge
-	var data4 = data.mtgox.toString().substr(0,4);
+	var data4 = data.mtgox.toFixed(2).toString().substr(0,4);
 	chrome.browserAction.setBadgeText({text: data4});
 	
-	//update the popup
-	if(data.mtgox != undefined){ 
-		global.mtgox = data.mtgox.toFixed(2); 
-		var mtgox = global.mtgoxHist.slice(1, 1440);
-		mtgox.push(data.mtgox);
-		global.mtgoxHist = mtgox;
-	}
-	if(data.trade != undefined){ 
-		global.trade = data.trade.toFixed(2);
-		var trade = global.tradeHist.slice(1, 1440);
-		trade.push(data.trade);
-		global.tradeHist = trade;
-	}
-	timer = new Date();
+	global.mtgox = data.mtgox.toFixed(2); 
+	var mtgox = global.mtgoxHist.slice(1, 1440);
+	mtgox.push(data.mtgox);
+	global.mtgoxHist = mtgox;
+
+	global.trade = data.trade.toFixed(2);
+	var trade = global.tradeHist.slice(1, 1440);
+	trade.push(data.trade);
+	global.tradeHist = trade;
 };
 
-loadChannel();
+loadChannelFirst();
+
+//loadChannel();
 
 // chrome.browserAction.onClicked.addListener(
 //	function(){
@@ -103,13 +112,15 @@ loadChannel();
 //);
 
 
-var timer = undefined;
-setTimeout("heartbeat()", 10 * 1000);
-function heartbeat(){
-	if( (new Date()).getTime() - timer.getTime() > 60 * 1000){
-		console.log("heartbeat detected no activity, calling start()");
-		start();
-	}
-	setTimeout("heartbeat()", 120 * 1000);
-}
+
+
+//var timer = undefined;
+//setTimeout("heartbeat()", 10 * 1000);
+//function heartbeat(){
+//	if( (new Date()).getTime() - timer.getTime() > 120 * 1000){
+//		console.log("heartbeat detected no activity, calling start()");
+//		start();
+//	}
+//	setTimeout("heartbeat()", 60 * 1000);
+//}
 </script>

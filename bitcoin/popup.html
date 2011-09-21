@@ -9,7 +9,7 @@ body {
 }
 
 .exchange {
-	width: 220px;
+	width: 97%;
 }
 
 .exchange:hover{background-color:#7FBBF3;}
@@ -49,9 +49,10 @@ function init(){
 		}],
 		{
 			xaxis: { 
+				noTicks: 7,
 				tickDecimals: 0,
 				tickFormatter: function(x){
-					var val = x * -1;
+					var val = -1 * x;
 					var hours = Math.floor(val / 60);
 					var minutes = val % 60;
 					return  hours + ":" + minutes;
@@ -70,7 +71,7 @@ function init(){
 };
 </script>
 
-  <body onload="init()">
+  <body onload="init()" style="width:768px;height:480px;">
 		<div class="exchange" onclick="chrome.tabs.create({url:'https://www.mtgox.com/'})">
 			<span class="name">Mt. Gox</span>
 			<span id="mtgox" class="price"></span>
@@ -79,5 +80,5 @@ function init(){
 			<span class="name">TradeHill</span>
 			<span id="trade" class="price"></span>
 		</div>
-		<div id="container" style="width:600px;height:300px;"></div>
+		<div id="container" style="height:420px;"></div>
   </body>

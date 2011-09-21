@@ -4,6 +4,10 @@ runtime: python
 api_version: 1
 
 handlers:
+- url: /channel.js
+  static_files: channel.js
+  upload: channel.js
+
 - url: .*
   script: main.py
 
