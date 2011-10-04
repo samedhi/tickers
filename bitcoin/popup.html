@@ -55,11 +55,7 @@ function init(){
 	  var current = new Date();
 	  var hours = current.getHours();
 	  var minutes = current.getMinutes();
-	  if(minutes < 10){
-	    minutes = "0" + minutes
-	  }
 
-	  
 	  hours += Math.floor(x / 60);
 	  minutes += x % 60;
 	  
@@ -69,11 +65,16 @@ function init(){
 	  if(minutes < 0){
 	    minutes = 60 + minutes;
 	  }
+	  
+	  if(minutes < 10){
+	    minutes = "0" + minutes
+	  }
+
 	  return  hours+ ":" + minutes;
 	}
       },
-			yaxis: {
-				tickDecimals: 2
+      yaxis: {
+	tickDecimals: 2
       },
       selection: {
 	mode: 'x',		// => one of null, 'x', 'y' or 'xy'
@@ -94,5 +95,5 @@ function init(){
   <span class="name">TradeHill</span>
   <span id="trade" class="price"></span>
   </div>
-  <div id="container" style="height:420px;"></div>
+  <div id="container" style="height:420px;width:98%"></div>
   </body>
