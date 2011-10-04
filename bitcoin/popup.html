@@ -1,84 +1,98 @@
-<!--[if IE]><script language="javascript" type="text/javascript" src="flotr/excanvas.js"></script><![endif]-->
- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/prototype.js"></script>
-<script language="javascript" type="text/javascript" src="flotr/flotr-0.2.0-alpha.js"></script>
+  <!--[if IE]><script language="javascript" type="text/javascript" src="flotr/excanvas.js"></script><![endif]-->
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/prototype.js"></script>
+  <script language="javascript" type="text/javascript" src="flotr/flotr-0.2.0-alpha.js"></script>
+  
+  <style>
+  body {
+    overflow-x:hidden;
+    font: 24px Ariel;
+  }
 
-<style>
-body {
-  overflow-x:hidden;
-	font: 24px Ariel;
-}
+  .exchange {
+    width: 97%;
+  }
 
-.exchange {
-	width: 97%;
-}
+  .exchange:hover{background-color:#7FBBF3;}
 
-.exchange:hover{background-color:#7FBBF3;}
-
-.price {
-	float: right;
-}
+  .price {
+    float: right;
+  }
 </style>
-
+  
 <script>
+  
 function mtgox(){ return document.getElementById("mtgox"); };
 function trade(){ return document.getElementById("trade"); };
 
 function init(){
-	var glbl = chrome.extension.getBackgroundPage().global;
-	console.log(glbl);
-	mtgox().innerHTML = glbl.mtgox;
-	trade().innerHTML = glbl.trade;
-	
-	var mtgoxHist = glbl.mtgoxHist;
-	var tradeHist = glbl.tradeHist;
-	var mtgoxHistDisp = [];
-	var tradeHistDisp = [];
-	
-	for(var i = 0; i < mtgoxHist.length; i++){mtgoxHistDisp[i] = [-1*(mtgoxHist.length - (i+1)), mtgoxHist[i]]; }
-	for(var i = 0; i < tradeHist.length; i++){tradeHistDisp[i] = [-1*(tradeHist.length - (i+1)), tradeHist[i]]; }
-	
-	var f = Flotr.draw(
-	$('container'), [
-		{
-			data: mtgoxHistDisp,
-	    label: "MtGox"
-		},
-		{
-	    data: tradeHistDisp,
-	    label: "TradeHill"
-		}],
-		{
-			xaxis: { 
-				noTicks: 7,
-				tickDecimals: 0,
-				tickFormatter: function(x){
-					var val = -1 * x;
-					var hours = Math.floor(val / 60);
-					var minutes = val % 60;
-					return  hours + ":" + minutes;
-				}
-			},
+  var glbl = chrome.extension.getBackgroundPage().global;
+  console.log(glbl);
+  mtgox().innerHTML = glbl.mtgox;
+  trade().innerHTML = glbl.trade;
+  
+  var mtgoxHist = glbl.mtgoxHist;
+  var tradeHist = glbl.tradeHist;
+  var mtgoxHistDisp = [];
+  var tradeHistDisp = [];
+  
+  for(var i = 0; i < mtgoxHist.length; i++){mtgoxHistDisp[i] = [-1*(mtgoxHist.length - (i+1)), mtgoxHist[i]]; }
+  for(var i = 0; i < tradeHist.length; i++){tradeHistDisp[i] = [-1*(tradeHist.length - (i+1)), tradeHist[i]]; }
+  
+  var f = Flotr.draw(
+    $('container'), [
+      {
+	data: mtgoxHistDisp,
+	label: "MtGox"
+      },
+      {
+	data: tradeHistDisp,
+	label: "TradeHill"
+      }],
+    {
+      xaxis: { 
+	noTicks: 7,
+	tickFormatter: function(x){
+	  var current = new Date();
+	  var hours = current.getHours();
+	  var minutes = current.getMinutes();
+	  if(minutes < 10){
+	    minutes = "0" + minutes
+	  }
+
+	  
+	  hours += Math.floor(x / 60);
+	  minutes += x % 60;
+	  
+	  if(hours < 0){
+	    hours = 24 + hours;
+	  }
+	  if(minutes < 0){
+	    minutes = 60 + minutes;
+	  }
+	  return  hours+ ":" + minutes;
+	}
+      },
 			yaxis: {
 				tickDecimals: 2
-			},
-			selection: {
-				mode: 'x',		// => one of null, 'x', 'y' or 'xy'
-				color: '#B6D9FF',	// => selection box color
-				fps: 30			// => frames-per-second
-			},
-		}
-	);
+      },
+      selection: {
+	mode: 'x',		// => one of null, 'x', 'y' or 'xy'
+	color: '#B6D9FF',	// => selection box color
+	fps: 30			// => frames-per-second
+      },
+    }
+  );
 };
 </script>
 
   <body onload="init()" style="width:768px;height:480px;">
-		<div class="exchange" onclick="chrome.tabs.create({url:'https://www.mtgox.com/'})">
-			<span class="name">Mt. Gox</span>
-			<span id="mtgox" class="price"></span>
-		</div>
-		<div class="exchange" onclick="chrome.tabs.create({url:'https://www.tradehill.com/'})">
-			<span class="name">TradeHill</span>
-			<span id="trade" class="price"></span>
-		</div>
-		<div id="container" style="height:420px;"></div>
+  <div class="exchange" onclick="chrome.tabs.create({url:'https://www.mtgox.com/'})">
+  <span class="name">Mt. Gox</span>
+  <span id="mtgox" class="price"></span>
+  </div>
+  <div class="exchange" onclick="chrome.tabs.create({url:'https://www.tradehill.com/'})">
+  <span class="name">TradeHill</span>
+  <span id="trade" class="price"></span>
+  </div>
+  <div id="container" style="height:420px;"></div>
   </body>
