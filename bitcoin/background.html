@@ -1,126 +1,76 @@
-<!-- <script type="text/javascript" src="http://bitcoingae.appspot.com/_ah/channel/jsapi"></script>  -->
 <script type="text/javascript" src="http://bitcoingae.appspot.com/channel.js"></script> 
 <script>
 var global = {mtgox: "LOADING", trade: "LOADING", mtgoxHist:[], tradeHist:[]};
-var globalChannel = null;
 
-function loadChannelFirst(){
-	if(typeof(goog) === "undefined"){
-		console.log("goog not found, trying to get resources");
-		if(globalChannel != null){
-			document.getElementsByTagName("head")[0].removeChild(globalChannel);
-		}
-		globalChannel = document.createElement('script');
-		globalChannel.setAttribute("type","text/javascript");
-		globalChannel.setAttribute("src", "http://bitcoingae.appspot.com/_ah/channel/jsapi");
-		if (typeof globalChannel != "undefined"){
-			document.getElementsByTagName("head")[0].appendChild(globalChannel)
-		}
-		setTimeout("loadChannelFirst()", 1000*5);
-	}else{
-		console.log("goog found, starting up");
-		start();
-	}
-};
-
-function start(){
-	console.log("start() being called");
-	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "http://bitcoingae.appspot.com/getId", true);
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			var text = xhr.responseText;
-			console.log("xhr in start() response text is => "+text+"("+new Date()+")");
-			if(xhr.status == 200){	
-				var resp = JSON.parse(text);
-				console.log(resp);
-				run(resp.token);
-				global.mtgoxHist = resp["mtgoxHist"];
-				global.tradeHist = resp["tradeHist"];
-//		}else{
-//				console.log("xhr in start() non 200 response text is => "+text+"("+new Date()+")");
-//				setTimeout("cleanup()", 1000)
-			}
-		}
-	};
-	xhr.onerror = function(msg){
-		console.log("xhr in start() error " + msg.description + " (" + msg.code + ")");
-		setTimeout("start()", 1000);
-	};
-	xhr.send();
-	
-	setTimeout("cleanup()", 110 * 60 * 1000);
-};
-
-var socket = null;
-
-function run(token){
-	console.log("run()'s token was => "+token);
-		var channel = new goog.appengine.Channel(token);
-		socket = channel.open();
-		
-		socket.onmessage = onMessage;
-		
-		socket.onclose = function(){
-			console.log("the connection was closed");
-		};
-
-		socket.onerror = function(msg){
-			console.log("socket error in run() " + msg.description + " (" + msg.code + ")");
-			cleanup();
-		};
-};
-
-function cleanup(){
-	console.log("cleaning up resources");
-	if(socket != null){
-		socket.close();
-		socket = null;
-	}
-	for(var i = 0; i < document.body.childNodes.length; i++){
-		body.removeChild(body.childNodes[i]);
-	}
-	setTimeout("start()", 1000);
+function reload(msg){
+  console.log(msg);
+  setTimeout("window.location.reload()", 60000);
 }
 
-function onMessage(message){
-	var data = JSON.parse(message.data);
-	console.log("onMessage called with message => " + message.data + " ("+new Date()+")");
-	
-	var data4 = data.mtgox.toFixed(2).toString().substr(0,4);
-	chrome.browserAction.setBadgeText({text: data4});
-	
-	global.mtgox = data.mtgox.toFixed(2); 
-	var mtgox = global.mtgoxHist.slice(1, 1440);
-	mtgox.push(data.mtgox);
-	global.mtgoxHist = mtgox;
+try{
+  function start(){
+    console.log("start() being called");
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "http://bitcoingae.appspot.com/getId", true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4) {
+	var text = xhr.responseText;
+	console.log("xhr in start() response text is => "+text+"("+new Date()+")");
+	if(xhr.status == 200){	
+	  var resp = JSON.parse(text);
+	  console.log(resp);
+	  run(resp.token);
+	  global.mtgoxHist = resp["mtgoxHist"];
+	  global.tradeHist = resp["tradeHist"];
+	}
+      }
+    };
+    xhr.onerror = function(msg){
+      reload("error in start() "+ msg.description + " (" + msg.code + ")");
+    };
+    xhr.send();
+  };
+  
+  function run(token){
+    console.log("run()'s token was => "+token);
+    if(goog == undefined){
+      reload("goog was not defined");
+    }
+    var channel = new goog.appengine.Channel(token);
+    var socket = channel.open();
+    
+    socket.onmessage = onMessage;
+    
+    socket.onclose = function(){
+      reload("the connection was closed, it threw this error");
+    };
+    
+    socket.onerror = function(msg){
+      reload("socket error in run() " + msg.description + " (" + msg.code + ")");
+    };
+  };
+  
+  function onMessage(message){
+    var data = JSON.parse(message.data);
+    console.log("onMessage called with message => " + message.data + " ("+new Date()+")");
+    
+    var data4 = data.mtgox.toFixed(2).toString().substr(0,4);
+    chrome.browserAction.setBadgeText({text: data4});
+    
+    global.mtgox = data.mtgox.toFixed(2); 
+    var mtgox = global.mtgoxHist.slice(1, 1440);
+    mtgox.push(data.mtgox);
+    global.mtgoxHist = mtgox;
+    
+    global.trade = data.trade.toFixed(2);
+    var trade = global.tradeHist.slice(1, 1440);
+    trade.push(data.trade);
+    global.tradeHist = trade;
+  };
 
-	global.trade = data.trade.toFixed(2);
-	var trade = global.tradeHist.slice(1, 1440);
-	trade.push(data.trade);
-	global.tradeHist = trade;
-};
+  start();
 
-loadChannelFirst();
-
-//loadChannel();
-
-// chrome.browserAction.onClicked.addListener(
-//	function(){
-//		chrome.tabs.create({url:"https://mtgox.com/"})
-//	}
-//);
-
-
-
-
-//var timer = undefined;
-//setTimeout("heartbeat()", 10 * 1000);
-//function heartbeat(){
-//	if( (new Date()).getTime() - timer.getTime() > 120 * 1000){
-//		console.log("heartbeat detected no activity, calling start()");
-//		start();
-//	}
-//	setTimeout("heartbeat()", 60 * 1000);
-//}
+}catch(err){
+  reload(err);
+}
 </script>

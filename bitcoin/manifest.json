@@ -1,6 +1,6 @@
 {
   "name": "Bitcoin Watch",
-  "version": "1.7",
+  "version": "1.8",
   "description": "The current value of bitcoins in US dollars.",
   "permissions": [
 		"http://bitcoingae.appspot.com/getId"
