@@ -1,53 +1,67 @@
-  <!--[if IE]><script language="javascript" type="text/javascript" src="flotr/excanvas.js"></script><![endif]-->
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/prototype.js"></script>
-  <script language="javascript" type="text/javascript" src="flotr/flotr-0.2.0-alpha.js"></script>
-  
-  <style>
+<!--[if IE]><script language="javascript" type="text/javascript" src="flotr/excanvas.js"></script><![endif]-->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/prototype.js"></script>
+<script language="javascript" type="text/javascript" src="flotr/flotr-0.2.0-alpha.js"></script>
+
+<style>
   body {
-    overflow-x:hidden;
+  overflow-x:hidden;
     font: 24px Ariel;
   }
-
+  
   .exchange {
     width: 97%;
   }
+  
+  tbody tr.odd td {
+    background-color: #eee;
+  }
 
-  .exchange:hover{background-color:#7FBBF3;}
+  tbody tr:hover td { 
+    background-color:#7FBBF3; 
+  }
 
-  .price {
-    float: right;
+  table.tickers {
+    width: 100%;
+    border-width: 3px;
+    padding: 8px;
+  }
+
+  thead.tickers {
+    background-color: #ddd;
+    padding: 2px;
   }
 </style>
   
 <script>
-  
-function mtgox(){ return document.getElementById("mtgox"); };
-function trade(){ return document.getElementById("trade"); };
-
 function init(){
-  var glbl = chrome.extension.getBackgroundPage().global;
-  console.log(glbl);
-  mtgox().innerHTML = glbl.mtgox;
-  trade().innerHTML = glbl.trade;
-  
-  var mtgoxHist = glbl.mtgoxHist;
-  var tradeHist = glbl.tradeHist;
-  var mtgoxHistDisp = [];
-  var tradeHistDisp = [];
-  
-  for(var i = 0; i < mtgoxHist.length; i++){mtgoxHistDisp[i] = [-1*(mtgoxHist.length - (i+1)), mtgoxHist[i]]; }
-  for(var i = 0; i < tradeHist.length; i++){tradeHistDisp[i] = [-1*(tradeHist.length - (i+1)), tradeHist[i]]; }
+  var global = chrome.extension.getBackgroundPage().global;
+  console.log(global);
+  for(var exch in global.tickers){
+    for(var attr in {exchange: null, last:null, high:null, low:null, vol:null, sell:null, buy:null}){
+      var value = global.tickers[exch][attr];
+      if(attr == "exchange"){
+        value = value;
+      }else if(attr == "vol"){
+        value = Math.floor(value);
+      }else{
+        value = Math.floor((value * 100)) / 100.0
+      }
+      document.getElementById(exch+'-'+attr).innerHTML = value;
+    }
+  }
+
+  var flotr_histories = []
+  for(var exch in global.histories){
+    var hist = global.histories[exch];
+    var disp = [];
+    for(var i = 0; i < hist.length; i++){
+      disp[i] = [-1*(hist.length - (i+1)), hist[i]]; 
+    }
+    flotr_histories.push({data: disp, label: exch});
+  }
   
   var f = Flotr.draw(
-    $('container'), [
-      {
-	data: mtgoxHistDisp,
-	label: "MtGox"
-      },
-      {
-	data: tradeHistDisp,
-	label: "TradeHill"
-      }],
+    $('container'), flotr_histories,
     {
       xaxis: { 
 	noTicks: 6,
@@ -86,14 +100,42 @@ function init(){
 };
 </script>
 
-  <body onload="init()" style="width:768px;height:480px;">
-  <div class="exchange" onclick="chrome.tabs.create({url:'https://www.mtgox.com/'})">
-  <span class="name">Mt. Gox</span>
-  <span id="mtgox" class="price"></span>
-  </div>
-  <div class="exchange" onclick="chrome.tabs.create({url:'https://www.tradehill.com/'})">
-  <span class="name">TradeHill</span>
-  <span id="trade" class="price"></span>
-  </div>
+<body onload="init()" style="width:768px;height:480px;">
+
+  <table id="playlist" class="tickers">
+    <thead class='tickers'>
+      <tr>
+        <td>Exchange</td>
+	<td>Last</td>
+        <td>Buy</td>
+        <td>Sell</td>
+	<td>High</td>
+	<td>Low</td>
+	<td>Volume</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="even" onclick="chrome.tabs.create({url:'https://www.TradeHill.com/'})">
+        <td id="TradeHill-exchange"/>
+	<td id="TradeHill-last"/>
+        <td id="TradeHill-buy"/>
+        <td id="TradeHill-sell"/>
+	<td id="TradeHill-high"/>
+	<td id="TradeHill-low"/>
+	<td id="TradeHill-vol"/>
+      </tr>
+      <tr class="odd" onclick="chrome.tabs.create({url:'https://www.MtGox.com/'})">
+        <td id="MtGox-exchange"/>
+	<td id="MtGox-last"/>
+	<td id="MtGox-high"/>
+        <td id="MtGox-buy"/>
+        <td id="MtGox-sell"/>
+	<td id="MtGox-low"/>
+	<td id="MtGox-vol"/>
+      <tr class="odd">
+      </tr>
+    </tbody>
+  </table>
+
   <div id="container" style="height:420px;width:98%"></div>
-  </body>
+</body>

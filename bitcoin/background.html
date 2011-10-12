@@ -1,10 +1,12 @@
 <script type="text/javascript" src="http://bitcoingae.appspot.com/channel.js"></script> 
 <script>
-var global = {mtgox: "LOADING", trade: "LOADING", mtgoxHist:[], tradeHist:[]};
+var l = "Loading"
+var global = {histories:{},
+              tickers:{}};
 
 function reload(msg){
   console.log(msg);
-  setTimeout("window.location.reload()", 60000);
+  setTimeout("window.location.reload()", 60 * 1000);
 }
 
 try{
@@ -20,8 +22,9 @@ try{
 	  var resp = JSON.parse(text);
 	  console.log(resp);
 	  run(resp.token);
-	  global.mtgoxHist = resp["mtgoxHist"];
-	  global.tradeHist = resp["tradeHist"];
+          delete resp.token
+          delete resp.id
+          for(var name in resp){ global.histories[name] = resp[name]; }
 	}
       }
     };
@@ -33,13 +36,27 @@ try{
   
   function run(token){
     console.log("run()'s token was => "+token);
-    if(goog == undefined){
+    if(typeof goog =="undefined"){
       reload("goog was not defined");
     }
     var channel = new goog.appengine.Channel(token);
     var socket = channel.open();
     
-    socket.onmessage = onMessage;
+    socket.onmessage = function(message){
+      console.log("onMessage called with message => " + message.data + " ("+new Date()+")");
+      var data = JSON.parse(message.data);
+      var exch = data.exchange;
+     
+      global.tickers[exch] = data;
+      var history = global.histories[exch].slice(1, 1440);
+      history.push(data.last);
+      global.histories[exch] = history;
+
+      if(exch == 'MtGox'){
+        var data4 = data.last.toFixed(2).toString().substr(0,4);
+        chrome.browserAction.setBadgeText({text: data4});
+      }
+    }
     
     socket.onclose = function(){
       reload("the connection was closed, it threw this error");
@@ -49,28 +66,11 @@ try{
       reload("socket error in run() " + msg.description + " (" + msg.code + ")");
     };
   };
-  
-  function onMessage(message){
-    var data = JSON.parse(message.data);
-    console.log("onMessage called with message => " + message.data + " ("+new Date()+")");
-    
-    var data4 = data.mtgox.toFixed(2).toString().substr(0,4);
-    chrome.browserAction.setBadgeText({text: data4});
-    
-    global.mtgox = data.mtgox.toFixed(2); 
-    var mtgox = global.mtgoxHist.slice(1, 1440);
-    mtgox.push(data.mtgox);
-    global.mtgoxHist = mtgox;
-    
-    global.trade = data.trade.toFixed(2);
-    var trade = global.tradeHist.slice(1, 1440);
-    trade.push(data.trade);
-    global.tradeHist = trade;
-  };
 
   start();
 
-}catch(err){
-  reload(err);
+}catch(e){
+  console.log(e.message);
+  reload(e);
 }
 </script>

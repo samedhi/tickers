@@ -1,14 +1,12 @@
 {
   "name": "Bitcoin Watch",
-  "version": "1.8",
+  "version": "1.9",
   "description": "The current value of bitcoins in US dollars.",
-  "permissions": [
-		"http://bitcoingae.appspot.com/getId"
-  ],
-	"background_page": "background.html",
-	"browser_action": {
+  "permissions": [ "http://bitcoingae.appspot.com/getId" ],
+  "background_page": "background.html",
+  "browser_action": {
     "default_icon": "bitcoin.png",
-		"default_title":"Bitcoin in USD",
-		"default_popup": "popup.html"
+    "default_title":"Bitcoin in USD",
+    "default_popup": "popup.html"
   }
 }
