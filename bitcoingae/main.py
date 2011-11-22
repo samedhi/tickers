@@ -16,10 +16,13 @@ globHighId = 2**30
 def memcache_accessor(key, value=None):
         if value != None:
                 logging.info("setting %s to %s in memcache"%(key, value))
-                memcache.set(key, value, 60*15) #15 minutes
+                memcache.set(key, value, 4*60*60) #4 hours
         return memcache.get(key)
 def histories(name, value=None):
-        return memcache_accessor(name+"History", value)
+        ret =  memcache_accessor(name+"History", value)
+        if ret == None:
+               ret = memcache_accessor(name+"History", [])
+        return ret
 def tickers(name, value=None):
         return memcache_accessor(name+"Tickers", value)
 def banned(address, value=None):
@@ -30,8 +33,6 @@ def until(address, value=None):
 def exchanges():
         return [('https://mtgox.com/code/data/ticker.php', 'MtGox'),
                 ('https://api.tradehill.com/APIv1/USD/Ticker', 'TradeHill')]
-
-
 
 class RetrieveHandler(webapp.RequestHandler):
         def get(self):
@@ -55,6 +56,9 @@ class RetrieveHandler(webapp.RequestHandler):
                                         logging.warning("%s had no history, set to []"%name)
                         finally:
                                 histories(name, history[::-1][0:1440][::-1])
+                                if ticker == None:
+                                        logging.warning("%s had no tickers, so setting to last ticker value")
+                                        ticker = tickers(name, tickers(name))
                                 taskqueue.add(url="/tasks/notify", params={'min': 0,
                                                                            'max':globHighId, 
                                                                            'ticker':simplejson.dumps(ticker)})
